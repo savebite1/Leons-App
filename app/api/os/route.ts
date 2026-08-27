@@ -1,7 +1,8 @@
 import OpenAI from 'openai';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { buildDayPlan, solveNextGrade, subjectScore } from '../../engine';
 import type { AppState, OsAction } from '../../types';
+import { googleFetch, setTokenCookie, type GoogleTokens } from '../google/_lib';
 
 export const runtime = 'nodejs';
 
@@ -80,10 +81,19 @@ const tools: any[] = [
     parameters: objectSchema({ subjectId: { type: 'string' } }, ['subjectId'])
   },
   {
-    type: 'function', name: 'plan_today', description: 'Generate a deterministic day plan from the user’s real tasks, schedule, priorities and sport target.', strict: true,
+    type: 'function', name: 'plan_today', description: 'Generate a deterministic day plan from the user’s real tasks, local schedule, connected Google Calendar events, priorities and sport target.', strict: true,
     parameters: objectSchema({ date: { type: 'string', description: 'YYYY-MM-DD' } }, ['date'])
   }
 ];
+
+type CalendarContextEvent = {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  plannerEvent?: { id:string; title:string; date:string; start:string; duration:number; type:string };
+};
 
 function compactState(state: AppState) {
   return {
@@ -100,7 +110,68 @@ function compactState(state: AppState) {
   };
 }
 
-function executeTool(name: string, args: any, state: AppState, actions: OsAction[]) {
+function dateParts(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+  }).formatToParts(date);
+  const get = (type:string) => parts.find(p=>p.type===type)?.value || '';
+  return { date:`${get('year')}-${get('month')}-${get('day')}`, time:`${get('hour')}:${get('minute')}` };
+}
+
+async function loadGoogleCalendar(request: NextRequest, timeZone: string) {
+  const from = new Date();
+  const to = new Date(Date.now() + 21 * 86400000);
+  const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+  url.searchParams.set('singleEvents','true');
+  url.searchParams.set('orderBy','startTime');
+  url.searchParams.set('timeMin',from.toISOString());
+  url.searchParams.set('timeMax',to.toISOString());
+  url.searchParams.set('maxResults','50');
+  const { response, refreshed } = await googleFetch(request,url.toString());
+  if (!response || !response.ok) return { events: [] as CalendarContextEvent[], refreshed: null as GoogleTokens|null };
+  const data = await response.json();
+  const events: CalendarContextEvent[] = (data.items || []).filter((e:any)=>e.status!=='cancelled').map((e:any)=>{
+    const allDay = Boolean(e.start?.date);
+    const startRaw = e.start?.dateTime || e.start?.date;
+    const endRaw = e.end?.dateTime || e.end?.date;
+    let plannerEvent: CalendarContextEvent['plannerEvent'];
+    if (!allDay && startRaw && endRaw) {
+      const startDate = new Date(startRaw);
+      const endDate = new Date(endRaw);
+      const p = dateParts(startDate,timeZone);
+      plannerEvent = {
+        id:`google-${e.id}`,
+        title:e.summary || 'Google Kalender',
+        date:p.date,
+        start:p.time,
+        duration:Math.max(5,Math.round((endDate.getTime()-startDate.getTime())/60000)),
+        type:'private'
+      };
+    }
+    return {
+      id:e.id,
+      title:e.summary || '(Ohne Titel)',
+      start:startRaw || '',
+      end:endRaw || '',
+      allDay,
+      plannerEvent
+    };
+  });
+  return { events, refreshed };
+}
+
+function mergePlannerEvents(state: AppState, googleEvents: CalendarContextEvent[]) {
+  const copy = structuredClone(state) as AppState;
+  const google = googleEvents.flatMap(e=>e.plannerEvent?[e.plannerEvent]:[]);
+  const keys = new Set(copy.events.map(e=>`${e.date}|${e.start}|${e.title.toLowerCase()}`));
+  for (const e of google) {
+    const key = `${e.date}|${e.start}|${e.title.toLowerCase()}`;
+    if (!keys.has(key)) copy.events.push(e as any);
+  }
+  return copy;
+}
+
+function executeTool(name: string, args: any, state: AppState, actions: OsAction[], calendarEvents: CalendarContextEvent[]) {
   switch (name) {
     case 'add_subject': actions.push({ type:'add_subject', payload: args }); return { ok:true, queued:true };
     case 'update_subject': {
@@ -138,15 +209,15 @@ function executeTool(name: string, args: any, state: AppState, actions: OsAction
       return { ok:true, subject:s.name, target:s.target, score:subjectScore(s) };
     }
     case 'plan_today': {
-      const blocks = buildDayPlan(state,args.date);
+      const blocks = buildDayPlan(mergePlannerEvents(state,calendarEvents),args.date);
       actions.push({ type:'set_day_plan', payload:{ blocks } });
-      return { ok:true, blocks };
+      return { ok:true, blocks, googleCalendarConsidered: calendarEvents.some(e=>e.plannerEvent?.date===args.date) };
     }
     default: return { ok:false, error:'Unknown tool' };
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     if (!process.env.OPENAI_API_KEY) return NextResponse.json({ ok:false, error:'OPENAI_API_KEY is missing on the server.' }, { status:500 });
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -156,7 +227,14 @@ export async function POST(request: Request) {
     const history = Array.isArray(body.history) ? body.history.slice(-10) : [];
     if (!message || !state) return NextResponse.json({ ok:false, error:'Missing message or state.' }, { status:400 });
 
-    const instructions = `You are Leon OS, a personal planning assistant for a teenage student. Speak natural German unless the user switches language. Be concise, calm and useful. You are clearly an AI assistant, not a human.\n\nThe app state is provided below. Never invent subjects, grades, tasks, dates or commitments. If the user asks to change app data, use a function tool. Do not merely claim a change happened. Use IDs exactly as provided. For grade mathematics, use calculate_target_grade or get_subject_status; never do weighted grade math from intuition. For planning, prefer plan_today.\n\nBecause the user is a minor, keep content age-appropriate. Do not encourage unsafe, illegal, sexual, gambling, substance, or self-harm behavior. For high-risk situations, prioritize safety and appropriate adult/professional support.\n\nWhen a request is ambiguous in a way that could create the wrong data, ask one short question instead of guessing. Do not ask for confirmation for ordinary low-risk edits when the request is clear.\n\nCURRENT APP STATE:\n${JSON.stringify(compactState(state))}`;
+    const timeZone = request.headers.get('x-vercel-ip-timezone') || 'Europe/Berlin';
+    const now = new Date();
+    const currentDateTime = new Intl.DateTimeFormat('de-DE', {
+      timeZone, weekday:'long', year:'numeric', month:'long', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hourCycle:'h23'
+    }).format(now);
+    const { events: calendarEvents, refreshed } = await loadGoogleCalendar(request,timeZone).catch(()=>({events:[] as CalendarContextEvent[],refreshed:null as GoogleTokens|null}));
+
+    const instructions = `You are Leon OS, a personal planning assistant for a teenage student. Speak natural German unless the user switches language. Be concise, calm and useful. You are clearly an AI assistant, not a human.\n\nCURRENT REAL-WORLD TIME: ${currentDateTime}\nTIME ZONE: ${timeZone}\nUse this for words like heute, morgen, übermorgen, Freitag, später and nächste Woche. Never guess the current date.\n\nThe app state is provided below. Never invent subjects, grades, tasks, dates or commitments. If the user asks to change app data, use a function tool. Do not merely claim a change happened. Use IDs exactly as provided. For grade mathematics, use calculate_target_grade or get_subject_status; never do weighted grade math from intuition. For planning, prefer plan_today.\n\nCONNECTED GOOGLE CALENDAR (next 21 days, read-only context):\n${JSON.stringify(calendarEvents.map(e=>({title:e.title,start:e.start,end:e.end,allDay:e.allDay})))}\nTreat these events as real fixed commitments when recommending or planning time. Do not copy them into Leon OS unless the user explicitly asks to create a separate app event.\n\nBecause the user is a minor, keep content age-appropriate. Do not encourage unsafe, illegal, sexual, gambling, substance, or self-harm behavior. For high-risk situations, prioritize safety and appropriate adult/professional support.\n\nWhen a request is ambiguous in a way that could create the wrong data, ask one short question instead of guessing. Do not ask for confirmation for ordinary low-risk edits when the request is clear.\n\nCURRENT APP STATE:\n${JSON.stringify(compactState(state))}`;
 
     const input: any[] = history.map((m:any) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content ?? '') }));
     input.push({ role:'user', content:message });
@@ -179,7 +257,7 @@ export async function POST(request: Request) {
       for (const call of calls) {
         let args: any = {};
         try { args = JSON.parse(call.arguments || '{}'); } catch { args = {}; }
-        const result = executeTool(call.name,args,state,actions);
+        const result = executeTool(call.name,args,state,actions,calendarEvents);
         input.push({ type:'function_call_output', call_id:call.call_id, output:JSON.stringify(result) });
       }
       response = await openai.responses.create({
@@ -193,7 +271,9 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json({ ok:true, text:response.output_text || 'Erledigt.', actions });
+    const result = NextResponse.json({ ok:true, text:response.output_text || 'Erledigt.', actions, context:{ timeZone, calendarConnected: calendarEvents.length>0 } });
+    if (refreshed) setTokenCookie(result,refreshed);
+    return result;
   } catch (error:any) {
     console.error('OS API error', error);
     return NextResponse.json({ ok:false, error:error?.message || 'Unknown AI error' }, { status:500 });
