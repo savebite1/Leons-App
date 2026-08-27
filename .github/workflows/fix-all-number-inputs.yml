@@ -20,31 +20,30 @@ jobs:
           from pathlib import Path
           p = Path('app/page.tsx')
           s = p.read_text()
-
           needle = '<input className="input" type="number"'
           count = s.count(needle)
           if count == 0:
               raise SystemExit('No numeric inputs found to replace')
           s = s.replace(needle, '<NumberInput className="input"')
-
           marker = 'function Field({label,children}:{label:string;children:React.ReactNode})'
-          helper = '''function NumberInput(props:React.InputHTMLAttributes<HTMLInputElement>){
-  const {value,onChange,onFocus,onBlur,...rest}=props;
-  const [draft,setDraft]=useState(value==null?'':String(value));
-  const focused=useRef(false);
-  useEffect(()=>{if(!focused.current)setDraft(value==null?'':String(value));},[value]);
-  return <input {...rest} type="number" value={draft}
-    onFocus={e=>{focused.current=true;onFocus?.(e);}}
-    onChange={e=>{setDraft(e.target.value);if(e.target.value!=='')onChange?.(e);}}
-    onBlur={e=>{focused.current=false;if(draft==='')setDraft(value==null?'':String(value));onBlur?.(e);}}/>;
-}
-
-'''
+          helper = "\n".join([
+              "function NumberInput(props:React.InputHTMLAttributes<HTMLInputElement>){",
+              "  const {value,onChange,onFocus,onBlur,...rest}=props;",
+              "  const [draft,setDraft]=useState(value==null?'':String(value));",
+              "  const focused=useRef(false);",
+              "  useEffect(()=>{if(!focused.current)setDraft(value==null?'':String(value));},[value]);",
+              "  return <input {...rest} type=\"number\" value={draft}",
+              "    onFocus={e=>{focused.current=true;onFocus?.(e);}}",
+              "    onChange={e=>{setDraft(e.target.value);if(e.target.value!=='')onChange?.(e);}}",
+              "    onBlur={e=>{focused.current=false;if(draft==='')setDraft(value==null?'':String(value));onBlur?.(e);}}/>;",
+              "}",
+              "",
+              ""
+          ])
           if 'function NumberInput(' not in s:
               if marker not in s:
                   raise SystemExit('Field marker not found')
               s = s.replace(marker, helper + marker, 1)
-
           p.write_text(s)
           print(f'Replaced {count} number inputs')
           PY
