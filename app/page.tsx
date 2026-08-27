@@ -93,6 +93,7 @@ export default function Page() {
           <NavButton active={view==='today'} icon="◉" label="Today" onClick={()=>nav('today')}/>
           <NavButton active={view==='school'} icon="□" label="School" onClick={()=>nav('school')}/>
           <NavButton active={view==='plan'} icon="◇" label="Plan" onClick={()=>nav('plan')}/>
+          <NavButton active={false} icon="▣" label="Kalender" onClick={()=>window.location.assign('/google-calendar')}/>
           <NavButton active={view==='progress'} icon="↗" label="Progress" onClick={()=>nav('progress')}/>
           <NavButton active={view==='os'} icon="✦" label="OS" onClick={()=>nav('os')}/>
         </div>
@@ -123,7 +124,7 @@ function TodayView({state,move,avg,todayEvents,openModal,setState,goOS,notify}:{
   const plan=state.dayPlan;
   return <>
     <Header eyebrow={new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'2-digit',month:'long'}).format(new Date())} title={`Guten Morgen${state.profile.name?`, ${state.profile.name}`:''}.`}>
-      <button className="btn" onClick={()=>openModal('profile',{type:'profile'})}>Einstellungen</button><button className="btn primary" onClick={goOS}>Ask OS</button>
+      <button className="btn" onClick={()=>window.location.assign('/google-calendar')}>Kalender</button><button className="btn" onClick={()=>openModal('profile',{type:'profile'})}>Einstellungen</button><button className="btn primary" onClick={goOS}>Ask OS</button>
     </Header>
     <div className="grid two">
       <div className="card hero">
@@ -166,7 +167,7 @@ function SubjectDetail({subject,state,back,openModal,setState,notify}:{subject:S
 
 function PlanView({state,openModal,setState,notify}:{state:AppState;openModal:(k:any,r?:any)=>void;setState:React.Dispatch<React.SetStateAction<AppState>>;notify:(s:string)=>void}){
   const [tab,setTab]=useState<'tasks'|'exams'|'events'>('tasks'); const sorted=state.tasks.slice().sort((a,b)=>taskPriority(b,state)-taskPriority(a,state));
-  return <><Header eyebrow="PLAN" title="Aufgaben & Kalender"><button className="btn" onClick={()=>openModal('event',{type:'event'})}>Termin +</button><button className="btn" onClick={()=>openModal('exam',{type:'exam'})}>Prüfung +</button><button className="btn primary" onClick={()=>openModal('task',{type:'task'})}>Task +</button></Header>
+  return <><Header eyebrow="PLAN" title="Aufgaben & Kalender"><button className="btn" onClick={()=>window.location.assign('/google-calendar')}>Google Kalender</button><button className="btn" onClick={()=>openModal('event',{type:'event'})}>Termin +</button><button className="btn" onClick={()=>openModal('exam',{type:'exam'})}>Prüfung +</button><button className="btn primary" onClick={()=>openModal('task',{type:'task'})}>Task +</button></Header>
     <div className="tabs"><button className={`tab ${tab==='tasks'?'active':''}`} onClick={()=>setTab('tasks')}>Tasks</button><button className={`tab ${tab==='exams'?'active':''}`} onClick={()=>setTab('exams')}>Prüfungen</button><button className={`tab ${tab==='events'?'active':''}`} onClick={()=>setTab('events')}>Termine</button></div>
     <div className="card">{tab==='tasks'&&(sorted.length?<div className="list">{sorted.map(t=><div className="row" key={t.id}><button className={`checkbox ${t.status==='done'?'done':''}`} onClick={()=>setState(p=>({...p,tasks:p.tasks.map(x=>x.id===t.id?{...x,status:x.status==='done'?'open':'done'}:x)}))}/><div className="rowmain"><div className="rowtitle" style={{textDecoration:t.status==='done'?'line-through':'none'}}>{t.title}</div><div className="rowsub">{state.subjects.find(s=>s.id===t.subjectId)?.name||'Allgemein'} · {t.dueDate?formatDate(t.dueDate):'ohne Deadline'} · {t.duration} min · Prio {t.importance}/5</div></div><button className="btn small" onClick={()=>openModal('task',{type:'task',id:t.id})}>Bearbeiten</button></div>)}</div>:<div className="empty">Keine Tasks.</div>)}
       {tab==='exams'&&(state.exams.length?<div className="list">{state.exams.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(e=><div className="row" key={e.id}><div className="rowmain"><div className="rowtitle">{e.title}</div><div className="rowsub">{state.subjects.find(s=>s.id===e.subjectId)?.name||'Fach'} · {formatDate(e.date)} · Lernschätzung {e.estimatedMinutes} min</div></div><span className="pill">{daysUntil(e.date)} Tage</span><button className="btn small" onClick={()=>openModal('exam',{type:'exam',id:e.id})}>Bearbeiten</button></div>)}</div>:<div className="empty">Keine Prüfungen.</div>)}
