@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './ux.css';
 import './theme.css';
+import './signature.css';
 
 export const metadata: Metadata = {
   title: 'Leon OS',
