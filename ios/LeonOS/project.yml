@@ -19,4 +19,12 @@ targets:
         INFOPLIST_FILE: Info.plist
         GENERATE_INFOPLIST_FILE: NO
     scheme:
-      testTargets: []
+      testTargets:
+        - LeonOSTests
+  LeonOSTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    dependencies:
+      - target: LeonOS
