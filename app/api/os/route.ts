@@ -5,8 +5,6 @@ import type { AppState, OsAction } from '../../types';
 
 export const runtime = 'nodejs';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 const objectSchema = (properties: Record<string, unknown>, required: string[]) => ({
   type: 'object', properties, required, additionalProperties: false,
 });
@@ -151,6 +149,7 @@ function executeTool(name: string, args: any, state: AppState, actions: OsAction
 export async function POST(request: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) return NextResponse.json({ ok:false, error:'OPENAI_API_KEY is missing on the server.' }, { status:500 });
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const body = await request.json();
     const message = String(body.message ?? '').trim();
     const state = body.state as AppState;
