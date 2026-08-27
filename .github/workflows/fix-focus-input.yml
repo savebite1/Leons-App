@@ -1,4 +1,4 @@
-name: Fix focus input
+name: Finish focus input fix
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch focus input behavior
+      - name: Patch profile focus input and remove helper
         shell: bash
         run: |
           python - <<'PY'
@@ -21,31 +21,26 @@ jobs:
           p = Path('app/page.tsx')
           s = p.read_text()
 
-          old_state = "const [focus,setFocus]=useState(40);"
-          new_state = "const [focus,setFocus]=useState('40');"
-          if old_state not in s:
-              raise SystemExit('Onboarding focus state pattern not found')
-          s = s.replace(old_state, new_state, 1)
+          old_head = "function ProfileForm({state,setState,close,notify}:{state:AppState;setState:React.Dispatch<React.SetStateAction<AppState>>;close:()=>void;notify:(s:string)=>void}){const [p,setP]=useState({...state.profile,weekdayHomeTimes:{...state.profile.weekdayHomeTimes}});const save=(e:FormEvent)=>{e.preventDefault();setState(s=>({...s,profile:p}));"
+          new_head = "function ProfileForm({state,setState,close,notify}:{state:AppState;setState:React.Dispatch<React.SetStateAction<AppState>>;close:()=>void;notify:(s:string)=>void}){const [p,setP]=useState({...state.profile,weekdayHomeTimes:{...state.profile.weekdayHomeTimes}});const [focusText,setFocusText]=useState(String(state.profile.focusMinutes||40));const save=(e:FormEvent)=>{e.preventDefault();setState(s=>({...s,profile:{...p,focusMinutes:Math.max(5,Number(focusText)||40)}}));"
+          if old_head not in s:
+              raise SystemExit('Profile form head pattern not found')
+          s = s.replace(old_head, new_head, 1)
 
-          old_finish = "focusMinutes:focus,weeklySportTarget:sport"
-          new_finish = "focusMinutes:Math.max(5,Number(focus)||40),weeklySportTarget:sport"
-          if old_finish not in s:
-              raise SystemExit('Onboarding finish pattern not found')
-          s = s.replace(old_finish, new_finish, 1)
-
-          old_input = '<Field label="Fokusblock"><input className="input" type="number" value={focus} onChange={e=>setFocus(Number(e.target.value))}/></Field>'
-          new_input = '<Field label="Fokusblock (min)"><input className="input" type="number" min="5" max="180" inputMode="numeric" placeholder="z. B. 40" value={focus} onChange={e=>setFocus(e.target.value)}/></Field>'
+          old_input = '<Field label="Fokusblock (min)"><input className="input" type="number" value={p.focusMinutes} onChange={e=>setP({...p,focusMinutes:Number(e.target.value)})}/></Field>'
+          new_input = '<Field label="Fokusblock (min)"><input className="input" type="number" min="5" max="180" inputMode="numeric" placeholder="z. B. 40" value={focusText} onChange={e=>setFocusText(e.target.value)}/></Field>'
           if old_input not in s:
-              raise SystemExit('Onboarding focus input pattern not found')
+              raise SystemExit('Profile focus input pattern not found')
           s = s.replace(old_input, new_input, 1)
 
           p.write_text(s)
           PY
-      - name: Commit fix
+          rm .github/workflows/fix-focus-input.yml
+      - name: Commit final fix
         shell: bash
         run: |
           git config user.name "Leon OS CI"
           git config user.email "actions@users.noreply.github.com"
-          git add app/page.tsx
-          git commit -m "Fix focus block number input"
+          git add -A
+          git commit -m "Fix focus block inputs"
           git push
