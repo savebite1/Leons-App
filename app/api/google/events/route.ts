@@ -37,6 +37,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
+function addMinutesToLocalClock(date: string, start: string, duration: number) {
+  const base = new Date(`${date}T${start}:00Z`);
+  const end = new Date(base.getTime() + duration * 60000);
+  return `${end.getUTCFullYear()}-${String(end.getUTCMonth()+1).padStart(2,'0')}-${String(end.getUTCDate()).padStart(2,'0')}T${String(end.getUTCHours()).padStart(2,'0')}:${String(end.getUTCMinutes()).padStart(2,'0')}:00`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -45,14 +51,15 @@ export async function POST(request: NextRequest) {
     const date = String(body.date || '');
     const start = String(body.start || '');
     const duration = Math.max(5, Number(body.duration || 60));
+    const timeZone = String(body.timeZone || 'Europe/Berlin');
     if (!title || !date || !start) return NextResponse.json({ ok: false, error: 'Titel, Datum und Startzeit fehlen.' }, { status: 400 });
-    const startDate = new Date(`${date}T${start}:00`);
-    const endDate = new Date(startDate.getTime() + duration * 60000);
+    const startDateTime = `${date}T${start}:00`;
+    const endDateTime = addMinutesToLocalClock(date, start, duration);
     const payload = {
       summary: title,
       description: body.description ? String(body.description) : 'Erstellt mit Leon OS',
-      start: { dateTime: startDate.toISOString() },
-      end: { dateTime: endDate.toISOString() },
+      start: { dateTime: startDateTime, timeZone },
+      end: { dateTime: endDateTime, timeZone },
     };
     const { response, refreshed } = await googleFetch(request, eventUrl(calendarId), {
       method: 'POST',
