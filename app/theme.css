@@ -1,0 +1,255 @@
+/* Leon OS — Momentum / Success theme */
+:root{
+  --bg:#f7f9ff;
+  --panel:#ffffff;
+  --panel2:#f8faff;
+  --text:#101828;
+  --muted:#667085;
+  --line:#e6eaf2;
+  --line2:#d8deea;
+  --accent:#2563eb;
+  --accentSoft:#eaf1ff;
+  --success:#16a36a;
+  --successSoft:#e9f8f1;
+  --warning:#f59e0b;
+  --warningSoft:#fff6df;
+  --ai:#7c3aed;
+  --aiSoft:#f2ebff;
+  --danger:#dc4c4c;
+  --shadow:0 18px 50px rgba(31,55,105,.10);
+  --shadowSoft:0 8px 28px rgba(40,66,120,.07);
+  --radius:18px;
+}
+
+html{background:#f7f9ff}
+body{
+  background:
+    radial-gradient(circle at 12% 0%,rgba(37,99,235,.08),transparent 26rem),
+    radial-gradient(circle at 93% 18%,rgba(124,58,237,.055),transparent 24rem),
+    linear-gradient(180deg,#fbfcff 0%,#f6f8fd 100%);
+  color:var(--text);
+}
+
+/* Brand + navigation */
+.sidebar{
+  background:rgba(255,255,255,.82);
+  border-right-color:rgba(220,226,238,.9);
+  box-shadow:10px 0 34px rgba(48,68,110,.035);
+}
+.brand{font-weight:780;letter-spacing:-.02em}
+.mark{
+  background:linear-gradient(145deg,#2563eb,#5b4cf0);
+  box-shadow:0 8px 20px rgba(37,99,235,.24);
+}
+.navbtn{transition:background .18s ease,color .18s ease,transform .18s ease}
+.navbtn:hover{background:#f1f5ff;color:#244fc4;transform:translateX(2px)}
+.navbtn.active{
+  color:#1749c6;
+  background:linear-gradient(90deg,#eaf1ff,#f3f0ff);
+  box-shadow:inset 0 0 0 1px rgba(37,99,235,.08);
+}
+.navbtn.active .navicon{color:#2563eb}
+.sidefoot{color:#8a94a6}
+
+/* Typography */
+.title{color:#101828;font-weight:760;letter-spacing:-.045em}
+.eyebrow{color:#78849a;font-weight:650}
+.section-title{font-weight:760;color:#20293a;letter-spacing:-.015em}
+
+/* Cards */
+.card,.kpi,.subject-card,.chatwrap{
+  border-color:#e4e9f2;
+  box-shadow:var(--shadowSoft);
+}
+.card{
+  position:relative;
+  overflow:hidden;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+@media(hover:hover){
+  .card:hover{transform:translateY(-1px);box-shadow:0 13px 34px rgba(40,66,120,.09);border-color:#dbe2ef}
+}
+.card.hero{
+  background:
+    radial-gradient(circle at 90% 10%,rgba(124,58,237,.10),transparent 17rem),
+    linear-gradient(135deg,#f9fbff 0%,#eef4ff 100%);
+  border-color:#dbe6ff;
+  box-shadow:0 15px 40px rgba(37,99,235,.10);
+}
+.card.hero:before{
+  content:'';
+  position:absolute;
+  width:5px;
+  left:0;
+  top:26px;
+  bottom:26px;
+  border-radius:0 8px 8px 0;
+  background:linear-gradient(#2563eb,#7c3aed);
+}
+.card.hero .eyebrow{color:#3c64cf}
+.move-title{color:#102a68;font-weight:760}
+.reason{color:#667699}
+.bigmetric{color:#12213a}
+
+/* Buttons */
+.btn{
+  border-color:#dce2ed;
+  box-shadow:0 1px 2px rgba(31,45,75,.025);
+}
+.btn:hover{background:#f7f9fd;border-color:#cfd8e8}
+.btn.primary{
+  background:#2563eb;
+  border-color:#2563eb;
+  color:#fff;
+  box-shadow:0 8px 20px rgba(37,99,235,.22);
+}
+.btn.primary:hover{background:#1d56d9;border-color:#1d56d9;box-shadow:0 10px 24px rgba(37,99,235,.28)}
+.btn.blue{
+  background:#16a36a;
+  border-color:#16a36a;
+  color:#fff;
+  box-shadow:0 8px 20px rgba(22,163,106,.18);
+}
+.btn.blue:hover{background:#11885a;border-color:#11885a}
+.btn.danger{background:#fff7f7;border-color:#f2d8d8;color:#c63f3f}
+.btn.ghost:hover{background:#f1f5ff;color:#2358d1}
+
+/* Status colors */
+.pill{background:#fbfcff;border-color:#e1e6ef;color:#69768c}
+.pill.blue{background:var(--accentSoft);border-color:#d5e2ff;color:#2257cd;font-weight:650}
+.progress{background:#e9edf4;height:8px}
+.progress>span{background:linear-gradient(90deg,#2563eb,#16a36a)}
+.checkbox{border-color:#b8c3d5}
+.checkbox.done{background:#16a36a;border-color:#16a36a}
+.success{color:#0f9660}
+.dangertext{color:#d34b4b}
+.warning{color:#9a5d05;background:var(--warningSoft);border-color:#f4dc9a}
+.notice{color:#385786;background:#edf4ff;border-color:#d6e5ff}
+
+/* Subject cards */
+.subject-card{
+  background:linear-gradient(180deg,#fff 0%,#fbfcff 100%);
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.subject-card:nth-child(4n+1){border-top:3px solid #4b78f3}
+.subject-card:nth-child(4n+2){border-top:3px solid #7c3aed}
+.subject-card:nth-child(4n+3){border-top:3px solid #16a36a}
+.subject-card:nth-child(4n+4){border-top:3px solid #f59e0b}
+.subject-card:hover{border-color:#cbd7ec;box-shadow:0 12px 28px rgba(36,67,125,.11);transform:translateY(-2px)}
+.subject-score{color:#172b4d}
+
+/* KPI cards: success should feel visible */
+.kpi{background:#fff;position:relative;overflow:hidden}
+.kpi:after{content:'';position:absolute;inset:auto 0 0;height:3px;background:#dbe5f7}
+.kpi:nth-child(4n+1):after{background:#2563eb}
+.kpi:nth-child(4n+2):after{background:#7c3aed}
+.kpi:nth-child(4n+3):after{background:#16a36a}
+.kpi:nth-child(4n+4):after{background:#f59e0b}
+.kpi .v{color:#172b4d;font-weight:760}
+
+/* Tabs + schedules */
+.tab{transition:color .16s ease,border-color .16s ease}
+.tab.active{color:#245bd7;border-bottom-color:#2563eb}
+.block{background:#fafcff;border-color:#e3e9f3;transition:border-color .16s ease,background .16s ease}
+.block:hover{background:#f5f8ff;border-color:#d5e0f2}
+.time{color:#5570a3;font-weight:650}
+
+/* AI area — purple has semantic meaning */
+.chatwrap{
+  background:linear-gradient(180deg,#fff 0%,#fcfbff 100%);
+  border-color:#e5def4;
+  box-shadow:0 14px 38px rgba(92,55,150,.075);
+}
+.assistant-name{color:#7341d0}
+.message.user{
+  color:#143b8d;
+  background:#eaf1ff;
+  box-shadow:0 4px 14px rgba(37,99,235,.07);
+}
+.composer{background:#fcfbff;border-top-color:#ebe5f4}
+.composerbox:focus-within{border-color:#bba3ea;box-shadow:0 0 0 3px rgba(124,58,237,.09)}
+.send{
+  background:#7c3aed;
+  box-shadow:0 7px 18px rgba(124,58,237,.22);
+  transition:transform .12s ease,background .15s ease;
+}
+.send:hover{background:#6c2dd5}.send:active{transform:scale(.95)}
+.suggestion{background:#faf7ff;border-color:#e6dcf7;color:#67429e;transition:background .15s ease,border-color .15s ease}
+.suggestion:hover{background:#f2ebff;border-color:#d8c6f4}
+
+/* Inputs */
+.input,.select,.textarea{border-color:#d7deea;background:#fff;transition:border-color .15s ease,box-shadow .15s ease}
+.input:focus,.select:focus,.textarea:focus{border-color:#7fa3f6;box-shadow:0 0 0 4px rgba(37,99,235,.09)}
+.label{color:#64718a}
+
+/* Empty states */
+.empty{
+  background:linear-gradient(135deg,#fbfcff,#f7f9ff);
+  border-color:#dce3ef;
+  color:#78849a;
+}
+
+/* Modals */
+.modalback{background:rgba(18,29,52,.32)}
+.modal{border-color:#e0e6ef;box-shadow:0 30px 90px rgba(25,44,85,.20)}
+.close{background:#f3f5f9;color:#556176}
+.close:hover{background:#eaf0fa;color:#245bd7}
+
+/* Toasts should feel like completed actions */
+.toast{
+  background:#102b23;
+  border:1px solid rgba(44,209,140,.22);
+  box-shadow:0 16px 40px rgba(16,50,40,.22);
+}
+
+/* Onboarding */
+.onboarding{
+  background:
+    radial-gradient(circle at 18% 20%,rgba(37,99,235,.13),transparent 22rem),
+    radial-gradient(circle at 82% 75%,rgba(124,58,237,.10),transparent 23rem),
+    #f8faff;
+}
+.onboard-card{border-color:#e0e7f3;box-shadow:0 34px 100px rgba(36,60,110,.14)}
+.onboard-step{color:#3567d8}
+.onboard-card h1{color:#13233e}
+.chip{background:#edf3ff;color:#3159a9}
+
+/* Calendar keeps the same success theme */
+.calendar-shell details{border-color:#e2e8f2;box-shadow:0 6px 18px rgba(39,66,118,.045)}
+.calendar-event-time{color:#3764bb;font-weight:650}
+.calendar-event-title{color:#172b4d}
+
+/* Subtle motion */
+@keyframes momentumIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.topbar{animation:momentumIn .28s ease both}
+.content>.grid,.content>.subjects,.content>.kpis,.content>.card,.content>.tabs,.content>.notice,.chatwrap{animation:momentumIn .34s ease both}
+
+@media(max-width:900px){
+  body{background:linear-gradient(180deg,#fbfcff 0%,#f6f8fd 100%)}
+  .main{padding-top:20px}
+  .topbar{margin-bottom:20px}
+  .topactions{gap:9px}
+  .topactions>.btn,.topactions>a.btn{box-shadow:0 5px 15px rgba(33,60,112,.07)}
+  .card,.subject-card,.kpi{box-shadow:0 7px 22px rgba(40,66,120,.065)}
+  .card.hero{box-shadow:0 12px 30px rgba(37,99,235,.09)}
+  .card.hero:before{top:20px;bottom:20px;width:4px}
+  .mobilebar{
+    background:rgba(255,255,255,.94);
+    border-top-color:#dde4ef;
+    box-shadow:0 -12px 35px rgba(29,51,93,.08);
+  }
+  .mobilebar button{color:#7b879a;transition:background .16s ease,color .16s ease,transform .12s ease}
+  .mobilebar button.active{
+    color:#2258d0;
+    background:#eaf1ff;
+    box-shadow:inset 0 0 0 1px rgba(37,99,235,.07);
+  }
+  .mobilebar button:active{transform:scale(.96)}
+  .modal{border-color:#e2e7ef;box-shadow:0 -18px 60px rgba(24,43,80,.18)}
+  .modalhead{background:#fff}
+  .modal .actions{background:rgba(255,255,255,.97);border-top-color:#e4e9f1}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
