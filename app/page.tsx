@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { buildDayPlan, categoryAverage, isoToday, nextMove, overallAverage, projectedSubjectScore, solveNextGrade, subjectScore, taskPriority, uid } from './engine';
 import type { AppState, Category, Exam, Goal, Habit, OsAction, Subject, Task, Workout } from './types';
+import { CommandCenter } from './signature';
 
 const STORAGE_KEY = 'leon-os-v5';
 const DEFAULT_STATE: AppState = {
@@ -126,6 +127,7 @@ function TodayView({state,move,avg,todayEvents,openModal,setState,goOS,notify}:{
     <Header eyebrow={new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'2-digit',month:'long'}).format(new Date())} title={`Guten Morgen${state.profile.name?`, ${state.profile.name}`:''}.`}>
       <button className="btn" onClick={()=>window.location.assign('/google-calendar')}>Kalender</button><button className="btn" onClick={()=>openModal('profile',{type:'profile'})}>Einstellungen</button><button className="btn primary" onClick={goOS}>Ask OS</button>
     </Header>
+    <CommandCenter state={state} move={move} goOS={goOS}/>
     <div className="grid two">
       <div className="card hero">
         <div className="eyebrow">NEXT MOVE</div>
