@@ -1,0 +1,51 @@
+name: Fix focus input
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-focus-input.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch focus input behavior
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app/page.tsx')
+          s = p.read_text()
+
+          old_state = "const [focus,setFocus]=useState(40);"
+          new_state = "const [focus,setFocus]=useState('40');"
+          if old_state not in s:
+              raise SystemExit('Onboarding focus state pattern not found')
+          s = s.replace(old_state, new_state, 1)
+
+          old_finish = "focusMinutes:focus,weeklySportTarget:sport"
+          new_finish = "focusMinutes:Math.max(5,Number(focus)||40),weeklySportTarget:sport"
+          if old_finish not in s:
+              raise SystemExit('Onboarding finish pattern not found')
+          s = s.replace(old_finish, new_finish, 1)
+
+          old_input = '<Field label="Fokusblock"><input className="input" type="number" value={focus} onChange={e=>setFocus(Number(e.target.value))}/></Field>'
+          new_input = '<Field label="Fokusblock (min)"><input className="input" type="number" min="5" max="180" inputMode="numeric" placeholder="z. B. 40" value={focus} onChange={e=>setFocus(e.target.value)}/></Field>'
+          if old_input not in s:
+              raise SystemExit('Onboarding focus input pattern not found')
+          s = s.replace(old_input, new_input, 1)
+
+          p.write_text(s)
+          PY
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name "Leon OS CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/page.tsx
+          git commit -m "Fix focus block number input"
+          git push
